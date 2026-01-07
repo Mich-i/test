@@ -1,0 +1,75 @@
+﻿@page "/"
+@* @rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false)) *@
+@implements IAsyncDisposable
+
+<PageTitle>Chat Tool</PageTitle>
+
+<div>
+	<button @onclick="ShowSignIn">Sign In</button>
+	<button @onclick="ShowSignUp">Sign Up</button>
+</div>
+
+@if (activeForm == "SignUp")
+{
+	<div>
+		<h3>Sign Up</h3>
+		<div>
+			<label>Name: <input @bind="userName" /></label>
+
+			<p>Hub state: @(IsConnected ? "Connected" : "Disconnected")</p>
+
+			<button @onclick="SignUp" disabled="@(!IsConnected)">Sign Up</button>
+			<p>@connectionClosedMessage</p>
+		</div>
+
+		@if (!string.IsNullOrEmpty(userConnectionId))
+		{
+			<div>
+				<strong>Connection ID:</strong> <code>@userConnectionId</code>
+			</div>
+		}
+		@if (!string.IsNullOrEmpty(signInMessage))
+		{
+			<div class="text-success">@signInMessage</div>
+		}
+	</div>
+}
+else if (activeForm == "SignIn")
+{
+	<div>
+		<h3>Sign In</h3>
+		<div>
+			<label>Name: <input @bind="userName" /></label>
+
+			<p>Hub state: @(IsConnected ? "Connected" : "Disconnected")</p>
+
+			<button @onclick="SignIn" disabled="@(!IsConnected)">Sign In</button>
+			<p>@connectionClosedMessage</p>
+		</div>
+
+		@if (!string.IsNullOrEmpty(userConnectionId))
+		{
+			<div>
+				<strong>Connection ID:</strong> <code>@userConnectionId</code>
+			</div>
+		}
+		@if (!string.IsNullOrEmpty(signInMessage))
+		{
+			<div class="text-success">@signInMessage</div>
+		}
+	</div>
+}
+
+
+<hr/>
+
+<div>
+    <h4>Logged-in Users</h4>
+    <button type="button" @onclick="RefreshUsers">Refresh users</button>
+    <ul>
+        @foreach (string user in loggedInUsers)
+        {
+            <li>@user</li>
+        }
+    </ul>
+</div>
