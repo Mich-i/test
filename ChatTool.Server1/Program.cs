@@ -1,8 +1,9 @@
 using ChatTool.Core.Domain.Models;
+using ChatTool.Server1.Components;
 using ChatTool.Server.Hubs;
 using Microsoft.AspNetCore.ResponseCompression;
 
-namespace ChatTool.Server
+namespace ChatTool.Server1
 {
     public class Program
     {
@@ -44,6 +45,9 @@ namespace ChatTool.Server
             app.MapHub<MessageHub>("/messagehub");
 
             app.MapStaticAssets();
+
+            app.MapRazorComponents<App>()
+                .AddInteractiveServerRenderMode();
 
             app.Run();
         }

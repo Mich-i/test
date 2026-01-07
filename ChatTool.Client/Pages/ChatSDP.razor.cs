@@ -1,109 +1,126 @@
-﻿using Microsoft.AspNetCore.Components.Web;
+﻿using ChatTool.Client.Services;
+using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Web;
+using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.JSInterop;
 
 namespace ChatTool.Client.Pages;
 
 public partial class ChatSDP
 {
-    private string? LocalSdp { get; set; }
-    private string? RemoteSdp { get; set; }
-    private List<string> Messages { get; set; } = new();
-    private List<string> LogMessages { get; set; } = new();
-    private string? Message { get; set; }
-    public string DataChannelState { get; set; } = "closed";
-    private DotNetObjectReference<ChatSDP>? objRef;
+    [Parameter] public string LobbyCode { get; set; } = string.Empty;
 
-    protected override void OnInitialized()
-    {
-        this.objRef?.Dispose();
-        this.objRef = DotNetObjectReference.Create(this);
-    }
+    [Inject] public IJSRuntime Js { get; set; } = null!;
+    [Inject] public SignalingService SignalingService { get; set; } = null!;
 
-    public async Task Init()
-    {
-        await this.JS.InvokeVoidAsync("webRTCInterop.initialize", this.objRef);
-        this.LogMessages.Add("Initialized webRTCInterop");
-    }
+    private HubConnection? hub;
+    private bool isOfferer;
 
-    public async Task CreateOffer()
-    {
-        string local = await this.JS.InvokeAsync<string>("webRTCInterop.createOffer");
-        this.LocalSdp = local;
-        this.LogMessages.Add("Offer created. Copy Local SDP to remote peer.");
-    }
+    private string DataChannelState { get; set; } = "closed";
+    private string Message { get; set; } = string.Empty;
+    private List<string> Messages { get; } = [];
+    private List<string> LogMessages { get; } = [];
 
-    public async Task AcceptOffer()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (string.IsNullOrWhiteSpace(this.RemoteSdp))
+        if (!firstRender)
         {
-            this.LogMessages.Add("Paste remote offer SDP first.");
             return;
         }
 
-        string? answer = await this.JS.InvokeAsync<string>("webRTCInterop.receiveOfferAndCreateAnswer", this.RemoteSdp);
-        this.LocalSdp = answer;
-        this.LogMessages.Add("Answer created. Copy Local SDP back to offerer.");
+        // WebRTC initialisieren
+        await this.InitWebRtc();
+
+        this.hub = await this.SignalingService.GetHub();
+
+        // Offer erstellen
+        this.hub.On<string>("PeerJoined", async _ =>
+        {
+            this.isOfferer = true;
+
+            this.LogMessages.Add("Peer joined → creating offer");
+
+            string offer = await this.Js.InvokeAsync<string>("webRTCInterop.createOffer");
+            await this.hub.InvokeAsync("SignalSdp", this.LobbyCode, "offer", offer);
+
+            this.StateHasChanged();
+        });
+
+        // Offer / Answer empfangen
+        this.hub.On<string, string, string>("SignalSdp", async (code, type, payload) =>
+        {
+            if (!string.Equals(code, this.LobbyCode, StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
+            switch (type)
+            {
+                case "offer":
+                {
+                    this.isOfferer = false;
+                    this.LogMessages.Add("Received offer → creating answer");
+
+                    string answer = await this.Js.InvokeAsync<string>(
+                        "webRTCInterop.receiveOfferAndCreateAnswer",
+                        payload
+                    );
+
+                    await this.hub.InvokeAsync("SignalSdp", this.LobbyCode, "answer", answer);
+                    break;
+                }
+                case "answer":
+                    this.LogMessages.Add("Received answer → accepting");
+                    await this.Js.InvokeAsync<bool>("webRTCInterop.receiveAnswer", payload);
+                    break;
+            }
+
+            this.StateHasChanged();
+        });
+
+        // im Chatroom joinen
+        await this.hub.InvokeAsync<bool>("JoinRoom", this.LobbyCode);
     }
 
-    public async Task AcceptAnswer()
+    private async Task InitWebRtc()
     {
-        if (string.IsNullOrWhiteSpace(this.RemoteSdp))
+        await this.Js.InvokeVoidAsync("webRTCInterop.init",
+            DotNetObjectReference.Create(this));
+    }
+
+    // Chat send
+    private async Task OnSend()
+    {
+        if (string.IsNullOrWhiteSpace(this.Message))
         {
-            this.LogMessages.Add("Paste remote answer SDP first.");
             return;
         }
 
-        bool ok = await this.JS.InvokeAsync<bool>("webRTCInterop.receiveAnswer", this.RemoteSdp);
-        this.LogMessages.Add(ok ? "Remote answer accepted." : "Failed to accept remote answer.");
-    }
-
-    public async Task OnSend()
-    {
-        if (string.IsNullOrWhiteSpace(this.Message)) return;
-
-        bool isOpen = await this.JS.InvokeAsync<bool>("webRTCInterop.isDataChannelOpen");
-        if (!isOpen)
-        {
-            this.Messages.Add("Data channel not open — message queued locally.");
-        }
-
-        bool sent = await this.JS.InvokeAsync<bool>("webRTCInterop.sendData", this.Message);
-        if (sent) this.Messages.Add($"Me: {this.Message}");
-        else if (!isOpen) this.Messages.Add($"Queued: {this.Message}");
-        else this.Messages.Add("Send failed — data channel not open.");
-
+        await this.Js.InvokeVoidAsync("webRTCInterop.sendMessage", this.Message);
+        this.Messages.Add($"Me: {this.Message}");
         this.Message = string.Empty;
     }
 
+    private async Task SendOnKeyDown(KeyboardEventArgs pressedKey)
+    {
+        if (pressedKey.Key == "Enter")
+        {
+            await this.OnSend();
+        }
+    }
+
     [JSInvokable]
-    public void ReceiveMessage(string message)
+    public void OnMessageReceived(string message)
     {
         this.Messages.Add($"Peer: {message}");
         this.StateHasChanged();
     }
 
     [JSInvokable]
-    public void DataChannelStateChanged(string state)
+    public void OnDataChannelStateChanged(string state)
     {
         this.DataChannelState = state;
-        this.LogMessages.Add($"Data channel: {state}");
+        this.LogMessages.Add($"DataChannel state: {state}");
         this.StateHasChanged();
-    }
-
-    public async Task Close()
-    {
-        await this.JS.InvokeVoidAsync("webRTCInterop.close");
-        this.Messages.Add("Closed connection");
-        this.DataChannelState = "closed";
-    }
-
-    public void Dispose() => this.objRef?.Dispose();
-
-    private async Task SendOnKeyDown(KeyboardEventArgs pressedKey) 
-    {
-        if (pressedKey.Key == "Enter")
-        {
-            await this.OnSend();
-        }
     }
 }

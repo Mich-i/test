@@ -1,89 +1,39 @@
-﻿@using Microsoft.AspNetCore.SignalR.Client
-@inject HubConnection HubConnection
-@page "/"
+﻿@page "/"
+@using Microsoft.AspNetCore.SignalR.Client
+@inject NavigationManager NavigationManager
+@inject Services.SignalingService SignalingService
 
 <h3>Chat Tool</h3>
-<h1>Create Lobby</h1>
+
+<div class="mb-3">
+    <button class="btn btn-primary" @onclick="CreateRoom">Create Room</button>
+</div>
 
 <div class="mb-3">
     <label>Lobby Code</label>
-    <input @bind="LobbyCode" @bind:event="oninput" placeholder="Enter Lobby Code" />
+    <input @bind="LobbyCode" @bind:event="oninput" placeholder="ABC123" />
+    <button class="btn btn-secondary ms-2" @onclick="JoinRoom">Join</button>
 </div>
 
-<div class="mb-3">
-    <button @onclick="CreateLobby">Create Lobby</button>
-    <button @onclick="() => WantsToJoinLobby = true">Join Lobby</button>
-</div>
-
-<div>
-    @if (IsLobbyCreated)
-    {
-        <p>Lobby created! Your lobby code is: <strong>@LobbyCode</strong></p>
-    }
-    else if (WantsToJoinLobby)
-    {
-        <p>
-            Enter the lobby code above and click <em>Join Lobby</em>.
-            <button class="btn btn-primary ms-2" @onclick="JoinLobby">Join</button>
-        </p>
-    }
-
-    @if (!string.IsNullOrEmpty(ErrorMessage))
-    {
-        <div class="alert alert-danger mt-2">@ErrorMessage</div>
-    }
-</div>
+@if (!string.IsNullOrEmpty(ErrorMessage))
+{
+    <div class="alert alert-danger">@ErrorMessage</div>
+}
 
 @code {
-    // use injected HubConnection (registered in Program.cs)
-    public string? LobbyCode { get; set; }
-    public bool IsLobbyCreated { get; set; }
-    public bool WantsToJoinLobby { get; set; }
-    public string? ErrorMessage { get; set; }
+    private string? LobbyCode { get; set; }
+    private string? ErrorMessage { get; set; }
 
-    protected override async Task OnInitializedAsync()
-    {
-        if (HubConnection is null)
-        {
-            throw new InvalidOperationException("HubConnection not provided via DI.");
-        }
-
-        // Optional: register handlers
-        HubConnection.On<string>("LobbyCreated", code =>
-        {
-            LobbyCode = code;
-            IsLobbyCreated = true;
-            StateHasChanged();
-        });
-    }
-
-    public async Task CreateLobby()
+    private async Task CreateRoom()
     {
         ErrorMessage = null;
+        var hub = await SignalingService.GetHub();
 
-        if (string.IsNullOrWhiteSpace(LobbyCode))
-        {
-            ErrorMessage = "Please enter a lobby code before creating a lobby.";
-            return;
-        }
-
-        if (HubConnection is null)
-        {
-            ErrorMessage = "Hub connection is not available.";
-            return;
-        }
-
-        if (HubConnection.State == HubConnectionState.Disconnected)
-        {
-            await HubConnection.StartAsync();
-        }
-
-        await HubConnection.InvokeAsync("Create", LobbyCode);
-        IsLobbyCreated = true;
-       
+        string code = await hub.InvokeAsync<string>("CreateRoom");
+        NavigationManager.NavigateTo($"/chat/{code}");
     }
 
-    public async Task JoinLobby()
+    private async Task JoinRoom()
     {
         ErrorMessage = null;
 
@@ -93,19 +43,15 @@
             return;
         }
 
-        if (HubConnection is null)
+        var hub = await SignalingService.GetHub();
+        bool ok = await hub.InvokeAsync<bool>("JoinRoom", LobbyCode);
+
+        if (!ok)
         {
-            ErrorMessage = "Hub connection is not available.";
+            ErrorMessage = "Room not found or already full.";
             return;
         }
 
-       
-        if (HubConnection.State == HubConnectionState.Disconnected)
-        {
-            await HubConnection.StartAsync();
-        }
-
-        await HubConnection.SendAsync("join", LobbyCode);
-        WantsToJoinLobby = false;
+        NavigationManager.NavigateTo($"/chat/{LobbyCode.Trim().ToUpperInvariant()}");
     }
 }
