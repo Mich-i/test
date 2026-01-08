@@ -26,11 +26,16 @@
 
     private async Task CreateRoom()
     {
-        ErrorMessage = null;
-        var hub = await SignalingService.GetHub();
-
-        string code = await hub.InvokeAsync<string>("CreateRoom");
-        NavigationManager.NavigateTo($"/chat/{code}");
+        try
+        {
+            var hub = await SignalingService.GetHub();
+            string code = await hub.InvokeAsync<string>("CreateRoom");
+            NavigationManager.NavigateTo($"/chat/{code}");
+        }
+        catch (Exception exception)
+        {
+            ErrorMessage = exception.Message;
+        }
     }
 
     private async Task JoinRoom()

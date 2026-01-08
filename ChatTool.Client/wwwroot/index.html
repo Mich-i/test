@@ -1,18 +1,23 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ChatTool.Client</title>
+
+    <title>ChatTool</title>
+
     <base href="/" />
+
+    <!-- Styles -->
     <link rel="stylesheet" href="lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="css/app.css" />
+    <link rel="stylesheet" href="ChatTool.Client.styles.css" />
+
+    <!-- PWA -->
+    <link rel="manifest" href="manifest.webmanifest" />
     <link rel="icon" type="image/png" href="favicon.png" />
-    <link href="ChatTool.Client.styles.css" rel="stylesheet" />
-    <link href="manifest.webmanifest" rel="manifest" />
-    <link rel="apple-touch-icon" sizes="512x512" href="icon-512.png" />
     <link rel="apple-touch-icon" sizes="192x192" href="icon-192.png" />
+    <link rel="apple-touch-icon" sizes="512x512" href="icon-512.png" />
 </head>
 
 <body>
@@ -21,17 +26,26 @@
             <circle r="40%" cx="50%" cy="50%" />
             <circle r="40%" cx="50%" cy="50%" />
         </svg>
-        <div class="loading-progress-text"></div>
-    </div>
+    <div class="loading-progress-text"></div>
+</div>
 
-    <div id="blazor-error-ui">
-        An unhandled error has occurred.
-        <a href="." class="reload">Reload</a>
-        <span class="dismiss">🗙</span>
-    </div>
-    <script src="_framework/blazor.webassembly.js"></script>
-    <script>navigator.serviceWorker.register('service-worker.js');</script>
-	<script src="/webrtc.js"></script>
-    </body>
+<div id="blazor-error-ui">
+    An unhandled error has occurred.
+    <a href="" class="reload">Reload</a>
+    <span class="dismiss">🗙</span>
+</div>
 
+<!-- WebRTC interop MUST be loaded BEFORE Blazor -->
+<script src="webrtc.js"></script>
+
+<!-- Blazor -->
+<script src="_framework/blazor.webassembly.js"></script>
+
+<!-- Service worker (PWA) -->
+<script>
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('service-worker.js');
+    }
+</script>
+</body>
 </html>

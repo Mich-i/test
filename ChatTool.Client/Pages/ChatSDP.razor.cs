@@ -84,11 +84,11 @@ public partial class ChatSDP
 
     private async Task InitWebRtc()
     {
-        await this.Js.InvokeVoidAsync("webRTCInterop.init",
+        await this.Js.InvokeAsync<bool>(
+            "webRTCInterop.initialize",
             DotNetObjectReference.Create(this));
     }
 
-    // Chat send
     private async Task OnSend()
     {
         if (string.IsNullOrWhiteSpace(this.Message))
@@ -96,9 +96,30 @@ public partial class ChatSDP
             return;
         }
 
-        await this.Js.InvokeVoidAsync("webRTCInterop.sendMessage", this.Message);
+        bool sent = await this.Js.InvokeAsync<bool>("webRTCInterop.sendData", this.Message);
+        if (!sent)
+        {
+            this.LogMessages.Add("Send failed: DataChannel not open.");
+            return;
+        }
+
         this.Messages.Add($"Me: {this.Message}");
         this.Message = string.Empty;
+    }
+
+    [JSInvokable]
+    public void ReceiveMessage(string message)
+    {
+        this.Messages.Add($"Peer: {message}");
+        this.StateHasChanged();
+    }
+
+    [JSInvokable]
+    public void DataChannelStateChanged(string state)
+    {
+        this.DataChannelState = state;
+        this.LogMessages.Add($"DataChannel state: {state}");
+        this.StateHasChanged();
     }
 
     private async Task SendOnKeyDown(KeyboardEventArgs pressedKey)
@@ -107,20 +128,5 @@ public partial class ChatSDP
         {
             await this.OnSend();
         }
-    }
-
-    [JSInvokable]
-    public void OnMessageReceived(string message)
-    {
-        this.Messages.Add($"Peer: {message}");
-        this.StateHasChanged();
-    }
-
-    [JSInvokable]
-    public void OnDataChannelStateChanged(string state)
-    {
-        this.DataChannelState = state;
-        this.LogMessages.Add($"DataChannel state: {state}");
-        this.StateHasChanged();
     }
 }

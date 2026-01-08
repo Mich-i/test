@@ -1,23 +1,26 @@
-﻿using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.SignalR.Client;
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.AspNetCore.SignalR.Client;
 
 namespace ChatTool.Client.Services;
 
-public class SignalingService(NavigationManager navigationManager, IConfiguration configuration)
+public class SignalingService
 {
     private HubConnection? hub;
 
     public async Task<HubConnection> GetHub()
     {
+        if (this.hub is { State: HubConnectionState.Disconnected })
+        {
+            await this.hub.StartAsync();
+        }
+
+
         if (this.hub != null)
         {
             return this.hub;
         }
 
-        string hubUrl = "https://localhost:7000/messagehub";
         this.hub = new HubConnectionBuilder()
-            .WithUrl(hubUrl)
+            .WithUrl("https://localhost:7033/messagehub")
             .WithAutomaticReconnect()
             .Build();
 
