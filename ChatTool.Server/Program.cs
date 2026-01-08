@@ -1,51 +1,37 @@
-using ChatTool.Core.Domain.Models;
 using ChatTool.Server.Hubs;
-using Microsoft.AspNetCore.ResponseCompression;
 
-namespace ChatTool.Server
+var builder = WebApplication.CreateBuilder(args);
+
+// SignalR für Signaling
+builder.Services.AddSignalR();
+
+// CORS ist nötig, wenn Client (WASM) auf anderem Origin läuft (anderer Port!).
+// Trage hier die URLs ein, auf denen dein ChatTool.Client läuft.
+builder.Services.AddCors(options =>
 {
-    public class Program
+    options.AddPolicy("ClientCors", policy =>
     {
-        public static void Main(string[] args)
-        {
-            var builder = WebApplication.CreateBuilder(args);
+        policy
+            .WithOrigins(
+                "https://localhost:5000",
+                "http://localhost:5000",
+                "https://localhost:7000",
+                "http://localhost:7000"
+            )
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials();
+    });
+});
 
-            builder.Services.AddRazorComponents()
-                .AddInteractiveServerComponents();
+var app = builder.Build();
 
-            builder.Services.AddSignalR();
+app.UseHttpsRedirection();
 
-            builder.Services.AddResponseCompression(opts =>
-            {
-                opts.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(
-                    ["application/octet-stream"]);
-            });
+app.UseRouting();
+app.UseCors("ClientCors");
 
-            // Server-seitiger "globaler" Zustand
-            builder.Services.AddSingleton<UserInformation>();
+// Hub (alles lowercase, damit Client/Server 100% matchen)
+app.MapHub<MessageHub>("/messagehub");
 
-            WebApplication app = builder.Build();
-
-            app.UseResponseCompression();
-
-            if (!app.Environment.IsDevelopment())
-            {
-                app.UseExceptionHandler("/Error", createScopeForErrors: true);
-                app.UseHsts();
-            }
-
-            app.UseHttpsRedirection();
-
-            app.UseStaticFiles();
-
-            app.UseAntiforgery();
-
-            // SignalR Hub
-            app.MapHub<MessageHub>("/messagehub");
-
-            app.MapStaticAssets();
-
-            app.Run();
-        }
-    }
-}
+app.Run();

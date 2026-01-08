@@ -9,9 +9,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChatTool.Core.Test", "ChatT
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChatTool.Client", "ChatTool.Client\ChatTool.Client.csproj", "{2120E8AA-7C1F-486D-81DC-7EAE438860E3}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChatTool.Server1", "ChatTool.Server\ChatTool.Server1.csproj", "{00468E6C-68C1-46CB-9B5C-1BE59BFD5031}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChatTool.Server", "ChatTool.Server\ChatTool.Server.csproj", "{562E0A19-C359-F45D-1347-50CC2A15D4D6}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChatTool.Server", "WebApplication1\ChatTool.Server.csproj", "{42D9E3E8-1D49-4AFE-91D6-9D47A3897605}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChatTool.AppHost", "ChatTool.AppHost\ChatTool.AppHost.csproj", "{EF59884B-2221-CF79-D3F9-F306E756622E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -31,14 +31,14 @@ Global
 		{2120E8AA-7C1F-486D-81DC-7EAE438860E3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2120E8AA-7C1F-486D-81DC-7EAE438860E3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2120E8AA-7C1F-486D-81DC-7EAE438860E3}.Release|Any CPU.Build.0 = Release|Any CPU
-		{00468E6C-68C1-46CB-9B5C-1BE59BFD5031}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{00468E6C-68C1-46CB-9B5C-1BE59BFD5031}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{00468E6C-68C1-46CB-9B5C-1BE59BFD5031}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{00468E6C-68C1-46CB-9B5C-1BE59BFD5031}.Release|Any CPU.Build.0 = Release|Any CPU
-		{42D9E3E8-1D49-4AFE-91D6-9D47A3897605}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{42D9E3E8-1D49-4AFE-91D6-9D47A3897605}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{42D9E3E8-1D49-4AFE-91D6-9D47A3897605}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{42D9E3E8-1D49-4AFE-91D6-9D47A3897605}.Release|Any CPU.Build.0 = Release|Any CPU
+		{562E0A19-C359-F45D-1347-50CC2A15D4D6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{562E0A19-C359-F45D-1347-50CC2A15D4D6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{562E0A19-C359-F45D-1347-50CC2A15D4D6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{562E0A19-C359-F45D-1347-50CC2A15D4D6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EF59884B-2221-CF79-D3F9-F306E756622E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EF59884B-2221-CF79-D3F9-F306E756622E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EF59884B-2221-CF79-D3F9-F306E756622E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EF59884B-2221-CF79-D3F9-F306E756622E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
