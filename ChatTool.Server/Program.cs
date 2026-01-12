@@ -6,13 +6,10 @@ builder.Services.AddSignalR();
 
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("client", policy =>
+    options.AddPolicy("dev-client", policy =>
     {
         policy
-            .SetIsOriginAllowed(origin =>
-                origin != null &&
-                (origin.StartsWith("http://localhost:", StringComparison.OrdinalIgnoreCase) ||
-                 origin.StartsWith("http://192.168.20.212:", StringComparison.OrdinalIgnoreCase)))
+            .SetIsOriginAllowed(_ => true)
             .AllowAnyHeader()
             .AllowAnyMethod()
             .AllowCredentials();
@@ -22,7 +19,7 @@ builder.Services.AddCors(options =>
 var app = builder.Build();
 
 app.UseRouting();
-app.UseCors("client");
+app.UseCors("dev-client");
 
 app.MapHub<MessageHub>("/messagehub");
 
