@@ -1,21 +1,10 @@
-﻿using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.SignalR.Client;
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.AspNetCore.SignalR.Client;
 
 namespace ChatTool.Client.Services;
 
 public class SignalingService
 {
-    private readonly NavigationManager navigationManager;
-    private readonly IConfiguration configuration;
-
     private HubConnection? hub;
-
-    public SignalingService(NavigationManager navigationManager, IConfiguration configuration)
-    {
-        this.navigationManager = navigationManager;
-        this.configuration = configuration;
-    }
 
     public async Task<HubConnection> GetHub()
     {

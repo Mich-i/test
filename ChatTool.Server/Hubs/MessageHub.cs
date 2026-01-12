@@ -12,47 +12,51 @@ public class MessageHub : Hub
         this.logger = logger;
     }
 
-
     private static readonly ConcurrentDictionary<string, int> RoomCounts = new();
 
-    public async Task<string> CreateRoom()
+    public Task<string> CreateRoom()
     {
         string code = GenerateCode();
 
-        logger.LogInformation("CreateRoom called by {ConnectionId}. Code={Code}", Context.ConnectionId, code);
+        this.logger.LogInformation("CreateRoom called by {ConnectionId}. Code={Code}", this.Context.ConnectionId, code);
 
-        RoomCounts[code] = 1;
-        await Groups.AddToGroupAsync(Context.ConnectionId, code);
+        // Room existiert, aber noch niemand ist beigetreten
+        RoomCounts[code] = 0;
 
-        return code;
+        return Task.FromResult(code);
     }
+
 
     public async Task<bool> JoinRoom(string? code)
     {
-        logger.LogInformation("JoinRoom called by {ConnectionId}. Code={Code}", Context.ConnectionId, code);
-        logger.LogInformation("RoomCounts has: {Rooms}", string.Join(",", RoomCounts.Keys));
+        this.logger.LogInformation("JoinRoom called by {ConnectionId}. Code={Code}", this.Context.ConnectionId, code);
+        this.logger.LogInformation("RoomCounts has: {Rooms}", string.Join(",", RoomCounts.Keys));
 
         code = (code ?? string.Empty).Trim().ToUpperInvariant();
 
         if (!RoomCounts.TryGetValue(code, out int count))
+        {
             return false;
+        }
 
         if (count >= 2)
+        {
             return false;
+        }
 
         RoomCounts[code] = count + 1;
-        await Groups.AddToGroupAsync(Context.ConnectionId, code);
+        await this.Groups.AddToGroupAsync(this.Context.ConnectionId, code);
 
-        // dem anderen sagen: "ein Peer ist beigetreten"
-        await Clients.OthersInGroup(code).SendAsync("PeerJoined", code);
+        // sagen: "ein Peer ist beigetreten"
+        await this.Clients.OthersInGroup(code).SendAsync("PeerJoined", code);
 
         return true;
     }
 
     public async Task SignalSdp(string code, string type, string payload)
     {
-        code = (code ?? string.Empty).Trim().ToUpperInvariant();
-        await Clients.OthersInGroup(code).SendAsync("SignalSdp", code, type, payload);
+        code = (code).Trim().ToUpperInvariant();
+        await this.Clients.OthersInGroup(code).SendAsync("SignalSdp", code, type, payload);
     }
 
     public override async Task OnDisconnectedAsync(Exception? exception)

@@ -14,7 +14,6 @@ public partial class ChatSDP
     [Inject] public SignalingService SignalingService { get; set; } = null!;
 
     private HubConnection? hub;
-    private bool isOfferer;
 
     private string DataChannelState { get; set; } = "closed";
     private string Message { get; set; } = string.Empty;
@@ -36,8 +35,6 @@ public partial class ChatSDP
         // Offer erstellen
         this.hub.On<string>("PeerJoined", async _ =>
         {
-            this.isOfferer = true;
-
             this.LogMessages.Add("Peer joined → creating offer");
 
             string offer = await this.Js.InvokeAsync<string>("webRTCInterop.createOffer");
@@ -58,7 +55,6 @@ public partial class ChatSDP
             {
                 case "offer":
                 {
-                    this.isOfferer = false;
                     this.LogMessages.Add("Received offer → creating answer");
 
                     string answer = await this.Js.InvokeAsync<string>(
@@ -78,8 +74,13 @@ public partial class ChatSDP
             this.StateHasChanged();
         });
 
-        // im Chatroom joinen
-        await this.hub.InvokeAsync<bool>("JoinRoom", this.LobbyCode);
+        bool ok = await this.hub.InvokeAsync<bool>("JoinRoom", this.LobbyCode);
+        if (!ok)
+        {
+            this.LogMessages.Add("JoinRoom failed (room not found or full).");
+            this.StateHasChanged();
+        }
+
     }
 
     private async Task InitWebRtc()

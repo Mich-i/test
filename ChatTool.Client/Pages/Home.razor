@@ -1,5 +1,4 @@
 ﻿@page "/"
-@using Microsoft.AspNetCore.SignalR.Client
 @inject NavigationManager NavigationManager
 @inject Services.SignalingService SignalingService
 
@@ -18,45 +17,4 @@
 @if (!string.IsNullOrEmpty(ErrorMessage))
 {
     <div class="alert alert-danger">@ErrorMessage</div>
-}
-
-@code {
-    private string? LobbyCode { get; set; }
-    private string? ErrorMessage { get; set; }
-
-    private async Task CreateRoom()
-    {
-        try
-        {
-            var hub = await SignalingService.GetHub();
-            string code = await hub.InvokeAsync<string>("CreateRoom");
-            NavigationManager.NavigateTo($"/chat/{code}");
-        }
-        catch (Exception exception)
-        {
-            ErrorMessage = exception.Message;
-        }
-    }
-
-    private async Task JoinRoom()
-    {
-        ErrorMessage = null;
-
-        if (string.IsNullOrWhiteSpace(LobbyCode))
-        {
-            ErrorMessage = "Please enter a lobby code to join.";
-            return;
-        }
-
-        var hub = await SignalingService.GetHub();
-        bool ok = await hub.InvokeAsync<bool>("JoinRoom", LobbyCode);
-
-        if (!ok)
-        {
-            ErrorMessage = "Room not found or already full.";
-            return;
-        }
-
-        NavigationManager.NavigateTo($"/chat/{LobbyCode.Trim().ToUpperInvariant()}");
-    }
 }
