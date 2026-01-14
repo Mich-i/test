@@ -1,0 +1,53 @@
+﻿body {
+}
+
+.box {
+    border: 4px;
+    border-radius: 5px;
+    padding: 10px;
+    max-width: 70%;
+    margin-block-end: 1em;
+}
+
+.box2 {
+    overflow-wrap: break-word;
+    word-break: break-word;
+}
+
+.box-input {
+    border: 2px solid;
+    border-radius: 5px;
+    padding: 10px;
+    width: 70%;
+    margin-block-end: 1em;
+    overflow-wrap: break-word;
+    word-break: break-word;
+    line-height: 1.2em;
+    /* Start: 4 Zeilen */
+    height: calc(1.2em * 6 + 20px);
+    /* Scrollbar ab max-Höhe */
+    overflow-y: auto;
+}
+
+.flex-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    margin-top: auto;
+}
+
+.messages {
+    height: 75vh;
+    overflow-y: auto;
+    padding: 16px;
+}
+
+.input-bar {
+    display: flex;
+    gap: 10px;
+    align-items: flex-end;
+    margin-bottom: 10px;
+    position: sticky;
+    bottom: 10px;
+    background: transparent;
+}

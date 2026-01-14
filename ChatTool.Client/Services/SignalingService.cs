@@ -8,13 +8,15 @@ public class SignalingService
 
     public async Task<HubConnection> GetHub()
     {
-        if (this.hub is not null)
+        if (this.hub != null)
         {
             return this.hub;
         }
 
+        string hubUrl = "https://0.0.0.0:7033/messagehub";
+
         this.hub = new HubConnectionBuilder()
-            .WithUrl("https://localhost:50783/messagehub")
+            .WithUrl(hubUrl)
             .WithAutomaticReconnect()
             .Build();
 

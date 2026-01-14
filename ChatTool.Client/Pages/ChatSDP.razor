@@ -1,11 +1,11 @@
 ﻿@page "/chat/{LobbyCode}"
 
-<h3>Room: @LobbyCode</h3>
+    <h3>Room: @LobbyCode</h3>
 
-<p>
-    Data channel state:
-    <strong>@DataChannelState</strong>
-</p>
+    <p>
+        Data channel state:
+        <strong>@DataChannelState</strong>
+    </p>
 
 @if (DataChannelState != "open")
 {
@@ -21,22 +21,24 @@
 }
 else
 {
-    <h4>Send message</h4>
+   
+    <div class="flex-container">
+        <h5>Messages</h5>
+        <div class="messages">
+            
+            <ul>
+                @foreach (string msg in Messages)
+                {
+                    <li class="box box2">@msg</li>
+                }
+            </ul>
+        </div>
+        <div class="input-bar">
 
-    <input
-        @bind="Message"
-        @bind:event="oninput"
-        @onkeydown="SendOnKeyDown"
-        placeholder="Type message…"
-        style="width:70%" />
+            <textarea class="box-input " @bind="Message" @bind:event="oninput" @onkeydown="SendOnKeyDown" placeholder="Type message..."></textarea>
 
-    <button @onclick="OnSend">Send</button>
-
-    <h5>Messages</h5>
-    <ul>
-        @foreach (string msg in Messages)
-        {
-            <li>@msg</li>
-        }
-    </ul>
+            <button @onclick="OnSend">Send</button>
+        </div>
+    </div>
+   
 }
