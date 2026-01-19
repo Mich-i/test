@@ -1,8 +1,10 @@
-﻿using ChatTool.Client.Services;
+﻿using ChatTool.Client.Application;
+using ChatTool.Client.Services;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.JSInterop;
+using System.Text.Json;
 
 namespace ChatTool.Client.Pages;
 
@@ -17,7 +19,8 @@ public partial class ChatSDP
 
     private string DataChannelState { get; set; } = "closed";
     private string Message { get; set; } = string.Empty;
-    private List<string> Messages { get; } = [];
+    private string Name { get; set; } = "Me";
+    private List<ChatMessage> Messages { get; } = [];
     private List<string> LogMessages { get; } = [];
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -97,21 +100,31 @@ public partial class ChatSDP
             return;
         }
 
-        bool sent = await this.Js.InvokeAsync<bool>("webRTCInterop.sendData", this.Message);
+        ChatMessage chatMessage = new(this.Message, this.Name, UserType.Me);
+
+        // Serialize the object to JSON before sending to JS
+        string json = JsonSerializer.Serialize(chatMessage);
+
+        bool sent = await this.Js.InvokeAsync<bool>("webRTCInterop.sendData", json);
+
         if (!sent)
         {
             this.LogMessages.Add("Send failed: DataChannel not open.");
             return;
         }
 
-        this.Messages.Add($"Me: {this.Message}");
+        this.Messages.Add(chatMessage);
         this.Message = string.Empty;
     }
 
     [JSInvokable]
-    public void ReceiveMessage(string message)
+    public void ReceiveMessage(string json)
     {
-        this.Messages.Add($"Peer: {message}");
+        ChatMessage? message = JsonSerializer.Deserialize<ChatMessage>(json);
+
+        message!.userType = UserType.Peer;
+        message.From = "Peer";
+        this.Messages.Add(message);
         this.StateHasChanged();
     }
 

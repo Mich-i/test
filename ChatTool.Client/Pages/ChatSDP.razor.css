@@ -38,6 +38,7 @@
 
 .messages {
     height: 75vh;
+    width: 70%;
     overflow-y: auto;
     padding: 16px;
 }
@@ -50,4 +51,73 @@
     position: sticky;
     bottom: 10px;
     background: transparent;
+}
+
+.messages ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* Base for each message row */
+.chat-message {
+  display: flex;
+  align-items: center;
+  width: 60%;
+  box-sizing: border-box;
+  margin: 0.35rem 0;
+  /* Keep text selectable and readable */
+  font-size: 0.95rem;
+}
+
+/* Peer messages: left aligned, marker on the left */
+.chat-message.from-peer {
+  justify-content: flex-start;
+  margin-right: auto;
+  background-color: darkgrey;
+}
+
+/* Left marker */
+.chat-message.from-peer::before {
+  content: "";
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  background-color: black; 
+  border-radius: 50%;
+  margin-right: 10px;
+  flex: 0 0 auto;
+}
+
+/* My messages: right aligned, marker on the right */
+.chat-message.from-me {
+  justify-content: flex-end;
+  margin-left: auto;
+  background: lightgrey; 
+  color: black;
+}
+
+/* Right marker */
+.chat-message.from-me::after {
+  content: "";
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  background: black; 
+  border-radius: 50%;
+  margin-left: 10px;
+  flex: 0 0 auto;
+}
+
+@media (max-width: 1104px) {
+    .chat-message {
+        max-width: 86%;
+        padding: 0.4rem 0.6rem;
+    }
+    .messages {
+        width: 100%;
+    }
+    .box-input {
+        width: 100%;
+    }   
 }
