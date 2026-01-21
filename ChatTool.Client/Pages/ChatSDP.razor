@@ -1,12 +1,14 @@
 ﻿@page "/chat/{LobbyCode}"
-@using ChatTool.Client.Application
+@using ChatTool.Shared
 
-    <h3>Room: @LobbyCode</h3>
+<h3>Room: @LobbyCode</h3>
 
-    <p>
-        Data channel state:
-        <strong>@DataChannelState</strong>
-    </p>
+<p>
+    Data channel state:
+    <strong>@DataChannelState</strong>
+</p>
+
+<input @bind="Name"/>
 
 @if (DataChannelState != "open")
 {

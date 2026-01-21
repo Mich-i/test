@@ -10,7 +10,7 @@
 
 <div class="mb-3">
     <label>Lobby Code</label>
-    <input @bind="LobbyCode" @bind:event="oninput" placeholder="ABC123" />
+    <input @bind="LobbyCode" @bind:event="oninput" @onkeydown="SendOnKeyDown" placeholder="ABC123" />
     <button class="btn btn-secondary ms-2" @onclick="JoinRoom">Join</button>
 </div>
 

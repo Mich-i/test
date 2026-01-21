@@ -1,10 +1,10 @@
-﻿using ChatTool.Client.Application;
-using ChatTool.Client.Services;
+﻿using ChatTool.Client.Services;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.JSInterop;
 using System.Text.Json;
+using ChatTool.Shared;
 
 namespace ChatTool.Client.Pages;
 
@@ -77,13 +77,14 @@ public partial class ChatSDP
             this.StateHasChanged();
         });
 
-        bool ok = await this.hub.InvokeAsync<bool>("JoinRoom", this.LobbyCode);
-        if (!ok)
+        this.LobbyCode = this.LobbyCode.Trim().ToUpperInvariant();
+
+        bool joined = await this.hub.InvokeAsync<bool>("JoinRoom", this.LobbyCode);
+        if (!joined)
         {
-            this.LogMessages.Add("JoinRoom failed (room not found or full).");
+            this.LogMessages.Add("Room not found or already full.");
             this.StateHasChanged();
         }
-
     }
 
     private async Task InitWebRtc()
@@ -122,9 +123,9 @@ public partial class ChatSDP
     {
         ChatMessage? message = JsonSerializer.Deserialize<ChatMessage>(json);
 
-        message!.userType = UserType.Peer;
-        message.From = "Peer";
-        this.Messages.Add(message);
+        message?.UpdateUserTypeAndSender();
+
+        if (message != null) this.Messages.Add(message);
         this.StateHasChanged();
     }
 

@@ -1,5 +1,5 @@
-using ChatTool.Client.Application;
 using ChatTool.Client.Services;
+using ChatTool.Shared;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 

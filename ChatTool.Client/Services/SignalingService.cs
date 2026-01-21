@@ -11,10 +11,13 @@ public sealed class SignalingService
 
     private HubConnection? hubConnection;
 
-    public SignalingService(NavigationManager navigationManager, IConfiguration configuration)
+    public SignalingService(
+        NavigationManager navigationManager,
+        IConfiguration configuration)
     {
         this.navigationManager = navigationManager;
         this.configuration = configuration;
+        Console.WriteLine(configuration);
     }
 
     public async Task<HubConnection> GetHub()
@@ -24,68 +27,58 @@ public sealed class SignalingService
             return this.hubConnection;
         }
 
-        string hubPath = this.configuration["Signaling:HubPath"] ?? "/messagehub";
-        if (!hubPath.StartsWith("/")) hubPath = "/" + hubPath;
-
-        // Try same-origin absolute URL first
-        string sameOriginUrl = this.navigationManager.ToAbsoluteUri(hubPath).ToString();
-        Console.WriteLine($"[SignalingService] Trying same-origin HubUrl = {sameOriginUrl}");
+        string hubUrl = this.BuildHubUrl();
 
         this.hubConnection = new HubConnectionBuilder()
-            .WithUrl(sameOriginUrl)
+            .WithUrl(hubUrl)
             .WithAutomaticReconnect()
             .Build();
 
-        try
-        {
-            await this.hubConnection.StartAsync();
-            return this.hubConnection;
-        }
-        catch (Exception firstEx)
-        {
-            Console.WriteLine($"[SignalingService] First attempt failed: {firstEx.Message}. Trying configured server address...");
+        await this.hubConnection.StartAsync();
 
-            try { await this.hubConnection.DisposeAsync(); } catch { }
-            this.hubConnection = null;
-
-            string configuredUrl = this.BuildConfiguredHubUrl(hubPath);
-            Console.WriteLine($"[SignalingService] Configured HubUrl = {configuredUrl}");
-
-            this.hubConnection = new HubConnectionBuilder()
-                .WithUrl(configuredUrl)
-                .WithAutomaticReconnect()
-                .Build();
-
-            try
-            {
-                await this.hubConnection.StartAsync();
-                return this.hubConnection;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"[SignalingService] Failed to start hub connection (configured url): {ex}");
-                throw;
-            }
-        }
+        return this.hubConnection;
     }
 
-    private string BuildConfiguredHubUrl(string hubPath)
+    private string BuildHubUrl()
     {
-        string serverScheme = this.configuration["Signaling:ServerScheme"] ?? "https";
-        string? serverPortText = this.configuration["Signaling:ServerPort"];
+        string hubPath = this.configuration["Signaling:HubPath"]
+            ?? throw new InvalidOperationException("Missing config: Signaling:HubPath");
 
-        var currentUri = new Uri(this.navigationManager.Uri);
-        string hostName = currentUri.Host;
+        string scheme = this.configuration["Signaling:ServerScheme"]
+            ?? throw new InvalidOperationException("Missing config: Signaling:ServerScheme");
 
-        int serverPort;
-        if (!int.TryParse(serverPortText, out serverPort))
+        string portText = this.configuration["Signaling:ServerPort"]
+            ?? throw new InvalidOperationException("Missing config: Signaling:ServerPort");
+
+        if (!int.TryParse(portText, out int port))
         {
-            int pagePort = currentUri.IsDefaultPort ? (serverScheme == "https" ? 443 : 80) : currentUri.Port;
-            Console.WriteLine($"[SignalingService] Warning: Signaling:ServerPort missing or invalid. Falling back to page port {pagePort}.");
-            serverPort = pagePort;
+            throw new InvalidOperationException(
+                $"Invalid config: Signaling:ServerPort = '{portText}'");
         }
 
-        var hubUri = new UriBuilder(serverScheme, hostName, serverPort, hubPath);
-        return hubUri.Uri.ToString();
+        string? configuredHost = this.configuration["Signaling:ServerHost"];
+
+        string host;
+        if (!string.IsNullOrWhiteSpace(configuredHost))
+        {
+            host = configuredHost;
+            Console.WriteLine($"[SignalingService] Using configured host: {host}");
+        }
+        else
+        {
+            host = new Uri(this.navigationManager.Uri).Host;
+            Console.WriteLine($"[SignalingService] Using browser host: {host}");
+        }
+
+        UriBuilder uriBuilder = new()
+        {
+            Scheme = scheme,
+            Host = host,
+            Port = port,
+            Path = hubPath,
+        };
+
+        return uriBuilder.Uri.ToString();
+
     }
 }

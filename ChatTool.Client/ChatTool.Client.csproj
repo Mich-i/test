@@ -14,7 +14,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\ChatTool.Core\ChatTool.Core.csproj" />
+    <ProjectReference Include="..\ChatTool.Shared\ChatTool.Shared.csproj" />
   </ItemGroup>
 
   <ItemGroup>

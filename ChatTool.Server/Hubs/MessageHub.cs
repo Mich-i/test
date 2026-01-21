@@ -3,38 +3,25 @@ using System.Collections.Concurrent;
 
 namespace ChatTool.Server.Hubs;
 
-public class MessageHub : Hub
+public sealed class MessageHub : Hub
 {
-    private readonly ILogger<MessageHub> logger;
-
-    public MessageHub(ILogger<MessageHub> logger)
-    {
-        this.logger = logger;
-    }
-
-    private static readonly ConcurrentDictionary<string, int> RoomCounts = new();
+    private static readonly ConcurrentDictionary<string, int> _roomCounts = new();
 
     public Task<string> CreateRoom()
     {
         string code = GenerateCode();
+        code = NormalizeCode(code);
 
-        this.logger.LogInformation("CreateRoom called by {ConnectionId}. Code={Code}", this.Context.ConnectionId, code);
-
-        // Room existiert, aber noch niemand ist beigetreten
-        RoomCounts[code] = 0;
-
+        _roomCounts[code] = 0;
         return Task.FromResult(code);
     }
 
 
     public async Task<bool> JoinRoom(string? code)
     {
-        this.logger.LogInformation("JoinRoom called by {ConnectionId}. Code={Code}", this.Context.ConnectionId, code);
-        this.logger.LogInformation("RoomCounts has: {Rooms}", string.Join(",", RoomCounts.Keys));
+        code = NormalizeCode(code);
 
-        code = (code ?? string.Empty).Trim().ToUpperInvariant();
-
-        if (!RoomCounts.TryGetValue(code, out int count))
+        if (!_roomCounts.TryGetValue(code, out int count))
         {
             return false;
         }
@@ -44,18 +31,17 @@ public class MessageHub : Hub
             return false;
         }
 
-        RoomCounts[code] = count + 1;
+        _roomCounts[code] = count + 1;
         await this.Groups.AddToGroupAsync(this.Context.ConnectionId, code);
 
-        // sagen: "ein Peer ist beigetreten"
         await this.Clients.OthersInGroup(code).SendAsync("PeerJoined", code);
 
         return true;
     }
 
-    public async Task SignalSdp(string code, string type, string payload)
+    public async Task SignalSdp(string? code, string type, string payload)
     {
-        code = (code).Trim().ToUpperInvariant();
+        code = NormalizeCode(code);
         await this.Clients.OthersInGroup(code).SendAsync("SignalSdp", code, type, payload);
     }
 
@@ -64,11 +50,26 @@ public class MessageHub : Hub
         await base.OnDisconnectedAsync(exception);
     }
 
+    private static string NormalizeCode(string? code)
+    {
+        return (code ?? string.Empty).Trim().ToUpperInvariant();
+    }
+
     private static string GenerateCode()
     {
-        const string chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-        var random = Random.Shared;
+        const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        return new string(Enumerable.Range(0, 6).Select(_ => chars[Random.Shared.Next(chars.Length)]).ToArray());
+    }
 
-        return new string(Enumerable.Range(0, 6).Select(_ => chars[random.Next(chars.Length)]).ToArray());
+    public Task<bool> CanJoinRoom(string? code)
+    {
+        code = NormalizeCode(code);
+
+        if (!_roomCounts.TryGetValue(code, out int count))
+        {
+            return Task.FromResult(false);
+        }
+
+        return Task.FromResult(count < 2);
     }
 }
