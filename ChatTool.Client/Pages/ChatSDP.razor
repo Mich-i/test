@@ -4,13 +4,12 @@
 <h3>Room: @LobbyCode</h3>
 
 <p>
-    Data channel state:
-    <strong>@DataChannelState</strong>
+    Verbundene Peers: <strong>@ConnectedPeers.Count</strong>
 </p>
 
-<input @bind="Name"/>
+<input @bind="Name" />
 
-@if (DataChannelState != "open")
+@if (!IsAnyConnectionOpen)
 {
     <p>Waiting for peer connection…</p>
 
@@ -24,11 +23,10 @@
 }
 else
 {
-   
     <div class="flex-container">
-        <h5>Messages</h5>
+        <h5>Messages (@ConnectedPeers.Count Peers online)</h5>
         <div class="messages">
-            
+
             <ul>
                 @foreach (ChatMessage msg in Messages)
                 {
@@ -45,5 +43,5 @@ else
             <button @onclick="OnSend">Send</button>
         </div>
     </div>
-   
+
 }

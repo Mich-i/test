@@ -34,8 +34,6 @@ ChatTool.Client (Blazor WASM)
 -App.razor / Routes.razor Einstieg & Routing
 
 ChatTool.Core (Shared)
--Domain/Models/ DTOs (zB: ChatMessage) (NOCH NICHT IMPLEMENTIERT)
--Domain/Abstractions/ Interfaces (IMessageManager) (NOCH NICHT IMPLEMENTIERT)
 -(Keinerlei UI- oder Framework-Abhängigkeiten)
 
 
@@ -65,7 +63,7 @@ ICE Candidates bereits enthält.
 1. **Offerer** ruft `createOffer()` auf, kopiert die zurückgegebene Base64-SDP und sendet sie manuell an den Partner.
 2. **Answerer** ruft `receiveOfferAndCreateAnswer(offerBase64)` auf und sendet die resultierende Base64-SDP zurück.
 3. **Offerer** ruft `receiveAnswer(answerBase64)` auf → Verbindung wird abgeschlossen.
-4. Nach `channel.onopen` können Nachrichten mit `sendData(text)` gesendet werden.
+4. Nachrichten können mit `sendData(text)` gesendet werden.
 
 #### Blazor-Interop (`window.webRTCInterop`)
 | Funktion | Zweck |

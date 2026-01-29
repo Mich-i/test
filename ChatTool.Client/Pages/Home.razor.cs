@@ -12,7 +12,7 @@ public partial class Home
     {
         try
         {
-            HubConnection hub = await this.SignalingService.GetHub();
+            var hub = await this.SignalingService.GetHub();
             string code = await hub.InvokeAsync<string>("CreateRoom");
             this.NavigationManager.NavigateTo($"/chat/{code}");
         }
@@ -22,35 +22,19 @@ public partial class Home
         }
     }
 
-    private async Task JoinRoom()
+    private Task JoinRoom()
     {
         this.ErrorMessage = null;
 
         if (string.IsNullOrWhiteSpace(this.LobbyCode))
         {
             this.ErrorMessage = "Please enter a lobby code to join.";
-            return;
+            return Task.CompletedTask;
         }
 
         string code = this.LobbyCode.Trim().ToUpperInvariant();
-
-        try
-        {
-            HubConnection hub = await this.SignalingService.GetHub();
-
-            bool canJoin = await hub.InvokeAsync<bool>("CanJoinRoom", code);
-            if (!canJoin)
-            {
-                this.ErrorMessage = "Room not found or already full.";
-                return;
-            }
-
-            this.NavigationManager.NavigateTo($"/chat/{code}");
-        }
-        catch (Exception exception)
-        {
-            this.ErrorMessage = exception.Message;
-        }
+        this.NavigationManager.NavigateTo($"/chat/{code}");
+        return Task.CompletedTask;
     }
 
     private async Task SendOnKeyDown(KeyboardEventArgs pressedKey)

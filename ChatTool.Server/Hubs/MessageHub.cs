@@ -20,30 +20,21 @@ public sealed class MessageHub : Hub
     public async Task<bool> JoinRoom(string? code)
     {
         code = NormalizeCode(code);
+        if (!_roomCounts.ContainsKey(code)) return false;
 
-        if (!_roomCounts.TryGetValue(code, out int count))
-        {
-            return false;
-        }
-
-        if (count >= 2)
-        {
-            return false;
-        }
-
-        _roomCounts[code] = count + 1;
+        _roomCounts[code]++;
         await this.Groups.AddToGroupAsync(this.Context.ConnectionId, code);
 
-        await this.Clients.OthersInGroup(code).SendAsync("PeerJoined", code);
-
+        // Sende die ID des neuen Peers an alle anderen
+        await this.Clients.OthersInGroup(code).SendAsync("PeerJoined", this.Context.ConnectionId);
         return true;
     }
 
-    public async Task SignalSdp(string? code, string type, string payload)
+    public async Task SignalSdp(string code, string targetConnectionId, string type, string payload)
     {
-        code = NormalizeCode(code);
-        await this.Clients.OthersInGroup(code).SendAsync("SignalSdp", code, type, payload);
+        await this.Clients.Client(targetConnectionId).SendAsync("SignalSdp", this.Context.ConnectionId, type, payload);
     }
+
 
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
@@ -57,19 +48,7 @@ public sealed class MessageHub : Hub
 
     private static string GenerateCode()
     {
-        const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        const string chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
         return new string(Enumerable.Range(0, 6).Select(_ => chars[Random.Shared.Next(chars.Length)]).ToArray());
-    }
-
-    public Task<bool> CanJoinRoom(string? code)
-    {
-        code = NormalizeCode(code);
-
-        if (!_roomCounts.TryGetValue(code, out int count))
-        {
-            return Task.FromResult(false);
-        }
-
-        return Task.FromResult(count < 2);
     }
 }

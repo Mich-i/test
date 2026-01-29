@@ -17,7 +17,8 @@ public partial class ChatSDP
 
     private HubConnection? hub;
 
-    private string DataChannelState { get; set; } = "closed";
+    private HashSet<string> ConnectedPeers { get; } = new();
+    private bool IsAnyConnectionOpen => this.ConnectedPeers.Any();
     private string Message { get; set; } = string.Empty;
     private string Name { get; set; } = "Me";
     private List<ChatMessage> Messages { get; } = [];
@@ -36,44 +37,31 @@ public partial class ChatSDP
         this.hub = await this.SignalingService.GetHub();
 
         // Offer erstellen
-        this.hub.On<string>("PeerJoined", async _ =>
+        // Wenn ein neuer Peer joint, erstelle ich ein Offer SPEZIELL für ihn
+        this.hub.On<string>("PeerJoined", async (peerConnectionId) =>
         {
-            this.LogMessages.Add("Peer joined → creating offer");
+            this.LogMessages.Add($"New Peer {peerConnectionId} joined. Creating offer...");
 
-            string offer = await this.Js.InvokeAsync<string>("webRTCInterop.createOffer");
-            await this.hub.InvokeAsync("SignalSdp", this.LobbyCode, "offer", offer);
+            string offer = await this.Js.InvokeAsync<string>("webRTCInterop.createOffer", peerConnectionId);
 
+           await this.hub.InvokeAsync("SignalSdp", this.LobbyCode, peerConnectionId, "offer", offer);
             this.StateHasChanged();
         });
 
-        // Offer / Answer empfangen
-        this.hub.On<string, string, string>("SignalSdp", async (code, type, payload) =>
+        // Empfang von SDP (Offer oder Answer)
+        this.hub.On<string, string, string>("SignalSdp", async (senderId, type, payload) =>
         {
-            if (!string.Equals(code, this.LobbyCode, StringComparison.OrdinalIgnoreCase))
+            if (type == "offer")
             {
-                return;
+                this.LogMessages.Add($"Received offer from {senderId}");
+                string answer = await this.Js.InvokeAsync<string>("webRTCInterop.receiveOfferAndCreateAnswer", senderId, payload);
+                await this.hub.InvokeAsync("SignalSdp", this.LobbyCode, senderId, "answer", answer);
             }
-
-            switch (type)
+            else if (type == "answer")
             {
-                case "offer":
-                {
-                    this.LogMessages.Add("Received offer → creating answer");
-
-                    string answer = await this.Js.InvokeAsync<string>(
-                        "webRTCInterop.receiveOfferAndCreateAnswer",
-                        payload
-                    );
-
-                    await this.hub.InvokeAsync("SignalSdp", this.LobbyCode, "answer", answer);
-                    break;
-                }
-                case "answer":
-                    this.LogMessages.Add("Received answer → accepting");
-                    await this.Js.InvokeAsync<bool>("webRTCInterop.receiveAnswer", payload);
-                    break;
+                this.LogMessages.Add($"Received answer from {senderId}");
+                await this.Js.InvokeAsync<bool>("webRTCInterop.receiveAnswer", senderId, payload);
             }
-
             this.StateHasChanged();
         });
 
@@ -84,6 +72,7 @@ public partial class ChatSDP
         {
             this.LogMessages.Add("Room not found or already full.");
             this.StateHasChanged();
+            return;
         }
     }
 
@@ -103,7 +92,6 @@ public partial class ChatSDP
 
         ChatMessage chatMessage = new(this.Message, this.Name, UserType.Me);
 
-        // Serialize the object to JSON before sending to JS
         string json = JsonSerializer.Serialize(chatMessage);
 
         bool sent = await this.Js.InvokeAsync<bool>("webRTCInterop.sendData", json);
@@ -130,10 +118,22 @@ public partial class ChatSDP
     }
 
     [JSInvokable]
-    public void DataChannelStateChanged(string state)
+    public void DataChannelStateChanged(string stateUpdate)
     {
-        this.DataChannelState = state;
-        this.LogMessages.Add($"DataChannel state: {state}");
+        var parts = stateUpdate.Split(": ");
+        if (parts.Length == 2)
+        {
+            string peerId = parts[0];
+            string state = parts[1];
+
+            if (state == "open")
+                this.ConnectedPeers.Add(peerId);
+            else
+                this.ConnectedPeers.Remove(peerId);
+
+        }
+
+        this.LogMessages.Add($"Update: {stateUpdate}");
         this.StateHasChanged();
     }
 
