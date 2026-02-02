@@ -25,16 +25,9 @@ Die Kommunikation kann sich vorerst auf reinen Text beschränken. Bilder, Anhän
 
 **Aktuelle Architektur:**
 
-Projekte:
-
-ChatTool.Client (Blazor WASM)
--Components/ UI (Layout, Nav, Seiten)
--Pages/ Chat-Seiten (Home, Public/Private/Group)
--wwwroot/webrtc.js (Logik für Peer-to-Peer Kommunikation)
--App.razor / Routes.razor Einstieg & Routing
-
-ChatTool.Core (Shared)
--(Keinerlei UI- oder Framework-Abhängigkeiten)
+Jeder Client verbindet sich zuerst mit dem Server.
+Der Server kennt die Räume und vermittelt die Verbindungen.
+Sobald die Peers verbunden sind, läuft der Chat direkt zwischen den Browsern – ohne den Server zu belasten.
 
 
 Rollen/Verantwortung:
@@ -49,10 +42,9 @@ Rollen/Verantwortung:
 
 ### WebRTC Logik (`webrtc.js`)
 
-Diese Datei kapselt die minimale WebRTC-Logik für eine direkte Peer-to-Peer-Verbindung über einen `RTCDataChannel`.
-Der Verbindungsaufbau erfolgt **manuell per Copy/Paste** (Offer/Answer). Es wird **kein Trickle-ICE** genutzt:
-Offer/Answer werden erst zurückgegeben, nachdem das ICE-Gathering abgeschlossen ist, damit die SDP die benötigten
-ICE Candidates bereits enthält.
+Diese Datei kapselt die minimale WebRTC-Logik für direkte Peer-to-Peer-Verbindungen über `RTCDataChannel`. Der Verbindungsaufbau erfolgt **manuell per Copy/Paste** (Offer/Answer). Es wird **kein Trickle-ICE** genutzt: Offer/Answer werden erst zurückgegeben, nachdem das ICE-Gathering abgeschlossen ist, damit die SDP die benötigten ICE Candidates bereits enthält.
+
+Wichtig: Die aktuelle Implementierung unterstützt mehrere gleichzeitige Peers. Intern wird ein `peers`-Objekt verwendet, das Verbindungen per `peerId` verwaltet.
 
 #### Kernobjekte
 - **`RTCPeerConnection` (`pc`)**: baut die Verbindung zwischen zwei Peers auf (SDP + ICE).
@@ -60,29 +52,32 @@ ICE Candidates bereits enthält.
 - **STUN (`iceServers`)**: standardmässig `stun:stun.l.google.com:19302` zur besseren Verbindung über NAT.
 
 #### Ablauf (Signaling)
-1. **Offerer** ruft `createOffer()` auf, kopiert die zurückgegebene Base64-SDP und sendet sie manuell an den Partner.
-2. **Answerer** ruft `receiveOfferAndCreateAnswer(offerBase64)` auf und sendet die resultierende Base64-SDP zurück.
-3. **Offerer** ruft `receiveAnswer(answerBase64)` auf → Verbindung wird abgeschlossen.
-4. Nachrichten können mit `sendData(text)` gesendet werden.
+1. **Offerer** ruft `createOffer(peerId)` auf, kopiert die zurückgegebene Base64-SDP und sendet sie manuell an den Partner (zugeordnet durch `peerId`).
+2. **Answerer** ruft `receiveOfferAndCreateAnswer(peerId, offerBase64)` auf und sendet die resultierende Base64-SDP zurück.
+3. **Offerer** ruft `receiveAnswer(peerId, answerBase64)` auf → Verbindung wird abgeschlossen.
+4. Nach `channel.onopen` können Nachrichten mit `sendData(text)` gesendet werden (die Implementierung sendet an alle offenen DataChannels).
 
 #### Blazor-Interop (`window.webRTCInterop`)
 | Funktion | Zweck |
 |---|---|
-| `initialize(dotNetObject)` | Speichert .NET-Referenz und initialisiert die PeerConnection |
-| `createOffer()` | Erstellt DataChannel (Offerer), setzt LocalDescription, wartet auf ICE complete, gibt Base64-SDP zurück |
-| `receiveOfferAndCreateAnswer(remoteBase64)` | Setzt Remote-Offer, erstellt Answer, wartet auf ICE complete, gibt Base64-SDP zurück |
-| `receiveAnswer(remoteBase64)` | Setzt Remote-Answer und finalisiert den Handshake |
-| `sendData(text)` | Sendet Text über den offenen DataChannel (nur wenn `readyState === "open"`) |
-| `isDataChannelOpen()` | Prüft, ob der DataChannel offen ist |
-| `close()` | Schliesst Channel/Connection und setzt interne Referenzen zurück |
+| `initialize(dotNetObject)` | Speichert .NET-Referenz (`dotNetRef`) für Callbacks |
+| `createOffer(peerId)` | Erstellt `RTCPeerConnection` + `RTCDataChannel` (als Offerer), setzt LocalDescription, wartet auf ICE complete, gibt Base64-SDP zurück; Verbindung wird unter `peers[peerId]` gehalten |
+| `receiveOfferAndCreateAnswer(peerId, offerBase64)` | Erstellt `RTCPeerConnection`, registriert `ondatachannel`, setzt Remote-Offer, erstellt Answer, wartet auf ICE complete, gibt Base64-SDP zurück; Verbindung wird unter `peers[peerId]` gehalten |
+| `receiveAnswer(peerId, answerBase64)` | Setzt Remote-Answer für die Verbindung mit `peerId` und finalisiert den Handshake |
+| `sendData(text)` | Sendet Text an alle offenen DataChannels (iteriert über `peers`) |
+| `close()` | Schliesst alle PeerConnections und leert das `peers`-Objekt |
+
+Hinweis: Es gibt in der aktuellen Version keine eigenständige `isDataChannelOpen()`-Funktion; Statusmeldungen kommen asynchron per Callback.
 
 #### Callbacks von JavaScript nach .NET
-| .NET Methode (`[JSInvokable]`) | Wann |
+| .NET Methode (`[JSInvokable]`) | Wann / Payload |
 |---|---|
-| `DataChannelStateChanged(state)` | Bei `channel.onopen`, `channel.onclose`, `channel.onerror` (`open/closed/error`) |
-| `ReceiveMessage(message)` | Bei eingehender Nachricht über `channel.onmessage` |
+| `DataChannelStateChanged(state)` | Wird aufgerufen bei `channel.onopen`, `channel.onclose`, `channel.onerror`. Payload ist ein String im Format `"peerId: state"` (z.B. `"peer1: open"`) |
+| `ReceiveMessage(message)` | Bei eingehender Nachricht über `channel.onmessage` — `message` ist der empfangene Text |
 
 #### Encoding
 Offer/Answer werden als `base64(JSON)` übertragen:
-- `encode(obj)`: JSON → UTF-8 Bytes → Base64
-- `decode(base64)`: Base64 → UTF-8 → JSON
+- `encode(obj)`: `JSON.stringify(obj)` → `btoa(...)` (Base64)
+- `decode(base64)`: `atob(...)` → `JSON.parse(...)`
+
+Die Implementierung verwendet `btoa`/`atob` auf JSON-Text; das ist die aktuelle, einfache Kodierung in `webrtc.js`
