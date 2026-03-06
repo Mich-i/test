@@ -1,0 +1,69 @@
+﻿@page "/manual-chat"
+@using ChatTool.Shared
+
+<PageTitle>Offline Chat</PageTitle>
+
+<div class="chat-wrapper">
+    
+    @if (DataChannelState == "closed" || DataChannelState == "error")
+    {
+        <h3>Offline Chat (Manual)</h3>
+        
+        <div class="setup-container">
+            <p><strong>Verbindung herstellen:</strong></p>
+            
+            <div class="setup-actions">
+                <button @onclick="Init">1. Initialisieren</button>
+                <button @onclick="CreateOffer">2. Offer erstellen (Peer A)</button>
+                <button @onclick="AcceptOffer">3. Offer annehmen (Peer B)</button>
+                <button @onclick="AcceptAnswer">4. Antwort annehmen (Peer A)</button>
+            </div>
+
+            <div class="token-area">
+                <div class="token-box">
+                    <label>Mein Token (Kopieren & senden):</label>
+                    <textarea @bind="LocalSdp" readonly></textarea>
+                </div>
+                <div class="token-box">
+                     <label>Partner Token (Hier einfügen):</label>
+                    <textarea @bind="RemoteSdp"></textarea>
+                </div>
+            </div>
+            
+            <div style="margin-top: 10px;">
+                Status: <strong>@DataChannelState</strong>
+            </div>
+        </div>
+    }
+    else if (DataChannelState == "open")
+    {
+        <div style="margin-bottom: 10px;">
+            <strong>Verbunden!</strong> <button @onclick="Close">Trennen</button>
+        </div>
+
+        <div class="flex-container">
+        
+            <div class="messages">
+                <ul>
+                    @foreach (ChatMessage msg in Messages)
+                    {
+                        <li class="box box2 chat-message @(msg.userType == UserType.Me ? "from-me" : "from-peer")">
+                            @msg.From : @msg.Message
+                        </li>
+                    }
+                </ul>
+            </div>
+        
+            <div class="input-bar">
+                <textarea class="box-input" 
+                      @bind="Message" 
+                      @bind:event="oninput" 
+                      @onkeydown="SendOnKeyDown" 
+                      placeholder="Type message..."></textarea>
+
+                <button @onclick="OnSend" style="height: 40px; margin-bottom: 1em;">Send</button>
+            </div>
+        </div>
+    }
+
+</div>

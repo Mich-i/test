@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "ChatTool.Desktop": {
+      "commandName": "Project",
+      "nativeDebugging": false
+    }
+  }
+}

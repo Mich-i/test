@@ -1,0 +1,20 @@
+﻿@page "/"
+@inject NavigationManager NavigationManager
+@inject Services.SignalingService SignalingService
+
+<h3>Chat Tool</h3>
+
+<div class="mb-3">
+    <button class="btn btn-primary" @onclick="CreateRoom">Create Room</button>
+</div>
+
+<div class="mb-3">
+    <label>Lobby Code</label>
+    <input @bind="LobbyCode" @bind:event="oninput" @onkeydown="SendOnKeyDown" placeholder="ABC123" />
+    <button class="btn btn-secondary ms-2" @onclick="JoinRoom">Join</button>
+</div>
+
+@if (!string.IsNullOrEmpty(ErrorMessage))
+{
+    <div class="alert alert-danger">@ErrorMessage</div>
+}

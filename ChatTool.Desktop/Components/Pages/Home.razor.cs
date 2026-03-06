@@ -1,0 +1,47 @@
+﻿using Microsoft.AspNetCore.Components.Web;
+using Microsoft.AspNetCore.SignalR.Client;
+
+namespace ChatTool.Desktop.Components.Pages;
+
+public partial class Home
+{
+    private string? LobbyCode { get; set; }
+    private string? ErrorMessage { get; set; }
+
+    private async Task CreateRoom()
+    {
+        try
+        {
+            var hub = await this.SignalingService.GetHub();
+            string code = await hub.InvokeAsync<string>("CreateRoom");
+            this.NavigationManager.NavigateTo($"/chat/{code}");
+        }
+        catch (Exception exception)
+        {
+            this.ErrorMessage = exception.Message;
+        }
+    }
+
+    private Task JoinRoom()
+    {
+        this.ErrorMessage = null;
+
+        if (string.IsNullOrWhiteSpace(this.LobbyCode))
+        {
+            this.ErrorMessage = "Please enter a lobby code to join.";
+            return Task.CompletedTask;
+        }
+
+        string code = this.LobbyCode.Trim().ToUpperInvariant();
+        this.NavigationManager.NavigateTo($"/chat/{code}");
+        return Task.CompletedTask;
+    }
+
+    private async Task SendOnKeyDown(KeyboardEventArgs pressedKey)
+    {
+        if (pressedKey.Key == "Enter")
+        {
+            await this.JoinRoom();
+        }
+    }
+}
