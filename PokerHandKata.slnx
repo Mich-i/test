@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="PokerHandKata/PokerHandKata.csproj" />
+  <Project Path="PokerHandKataTests/PokerHandKataTests.csproj" />
+</Solution>

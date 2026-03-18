@@ -1,0 +1,14 @@
+C:\projects\DailyTasks\PokerHandKata\PokerHandKata\obj\Debug\net10.0\PokerHandKata.GeneratedMSBuildEditorConfig.editorconfig
+C:\projects\DailyTasks\PokerHandKata\PokerHandKata\obj\Debug\net10.0\PokerHandKata.AssemblyInfoInputs.cache
+C:\projects\DailyTasks\PokerHandKata\PokerHandKata\obj\Debug\net10.0\PokerHandKata.AssemblyInfo.cs
+C:\projects\DailyTasks\PokerHandKata\PokerHandKata\obj\Debug\net10.0\PokerHandKata.csproj.CoreCompileInputs.cache
+C:\projects\DailyTasks\PokerHandKata\PokerHandKata\bin\Debug\net10.0\PokerHandKata.exe
+C:\projects\DailyTasks\PokerHandKata\PokerHandKata\bin\Debug\net10.0\PokerHandKata.deps.json
+C:\projects\DailyTasks\PokerHandKata\PokerHandKata\bin\Debug\net10.0\PokerHandKata.runtimeconfig.json
+C:\projects\DailyTasks\PokerHandKata\PokerHandKata\bin\Debug\net10.0\PokerHandKata.dll
+C:\projects\DailyTasks\PokerHandKata\PokerHandKata\bin\Debug\net10.0\PokerHandKata.pdb
+C:\projects\DailyTasks\PokerHandKata\PokerHandKata\obj\Debug\net10.0\PokerHandKata.dll
+C:\projects\DailyTasks\PokerHandKata\PokerHandKata\obj\Debug\net10.0\refint\PokerHandKata.dll
+C:\projects\DailyTasks\PokerHandKata\PokerHandKata\obj\Debug\net10.0\PokerHandKata.pdb
+C:\projects\DailyTasks\PokerHandKata\PokerHandKata\obj\Debug\net10.0\PokerHandKata.genruntimeconfig.cache
+C:\projects\DailyTasks\PokerHandKata\PokerHandKata\obj\Debug\net10.0\ref\PokerHandKata.dll
