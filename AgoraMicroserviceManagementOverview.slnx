@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/Solution Items/">
+    <File Path="infrastructure/main.bicep" />
+  </Folder>
+  <Project Path="AgoraMicroserviceManagementOverview.Tests.Acceptance/AgoraMicroserviceManagementOverview.Tests.Acceptance.csproj" />
+  <Project Path="AgoraMicroserviceManagementOverview.Tests.Unit/AgoraMicroserviceManagementOverview.Tests.Unit.csproj" />
+  <Project Path="AgoraMicroserviceManagementOverview.UI/agoramicroservicemanagementoverview.ui.esproj">
+    <Build />
+    <Deploy />
+  </Project>
+  <Project Path="AgoraMicroserviceManagementOverview/AgoraMicroserviceManagementOverview.csproj" />
+</Solution>
